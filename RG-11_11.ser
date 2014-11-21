@@ -1,0 +1,116 @@
+START_RDM_SETUP
+' Rain Gage
+'
+' GUIDELINES FOR USE
+' Comments begin with a semicolon.  Extra spaces, tabs, and blank lines are ignored.
+' Note that this file must correspond to the transmission protocol
+' used in thd Device Under Test (DUT)
+
+START_NOTES
+SW011
+Lens
+Bd
+END_NOTES
+
+
+' COM_PROTOCOL
+' SINGLE FRAME means that each frame starts with a character s,
+' followed by registers values (0-255) each transmitted as two bytes of
+' ascii-hex.  (e.g. decimal 42 would hex 3E, so this is transmitted as ascii 3, then E.
+' The frame terminates when all the registers have been transmitted.
+COM_PROTOCOL SINGLE_FRAME
+
+' SAMPLE_PER = Sample Period.  Time between frames, in seconds.
+SAMPLE_PER 0.20
+
+' Weight nominally 100.  Adjust this in saved RDM data files to weight the data more or
+' less heavily in an optimization.
+WEIGHT 100
+
+
+EMCAL 		' A board parameter.  Emitter Level when the board under test is placed in a new lens.
+LENS_WEAR 	' 1 = Out of box new, 10 = as scuffed as we can live with	
+
+
+BAUD 1200
+
+' AWAKE	AwakeRegIndex   AwakeThreshold    AwakeFrames DefaultLogInterval.
+' When logging data files, skips frames if there is inactivity.  
+' Other acquisition modes are not affected.
+' If the value of the register given by RegIndex is over Threshold, it will stay away for for WakeFrames.
+' If this keyword is absent, it will not go to sleep.
+' If any of the USB data acquisition bits change state, it will also wake up.
+' It will always log one frame every DefaultLogInterval frames, even if nothing wakes it up.
+. This will make it wake up to log if PeakRS exceeds 12.  It will log for 1 minute.
+' Absent anything to wake it up, it will log one data point each 10 minutes.
+AWAKE 0 12 300 3000
+
+' The RDM_DISP_REG values select what is displayed.  The RDM program itself will overright
+' this list of indexes as the user selects to store the display selections.
+RDM_DISP_REG  0 1 2 3 4
+
+' TRANSMITTED REGISTERS
+'	REG_NAME MyRegName OptionalLowerLim   OptionalUpperLim
+' A list of the transmitted registers, in the order in which they are transmitted.
+' The first of these is condidered index 0, the second index 1, and so on.
+' Add register names using either of these keywords: REG_NAME or retlw
+'
+' NAMED BITS must immediately follow the register they correpond to:
+' 	NAMED_BIT  MyBitName BitPosition  (0 = LSB)
+
+		REG_NAME 	PeakRS  	0	5		' 0
+		REG_NAME	SPeakRS		0	5		' 1
+		REG_NAME	RainAD8		64	192		' 2	
+		REG_NAME	LRA					' 3
+		REG_NAME	TransRat	60	170		' 4
+		REG_NAME	AmbLNoise				' 5
+
+		REG_NAME	RGBits					' 6
+		NAMED_BIT	PkOverThr	0
+		NAMED_BIT	Raining		1
+		NAMED_BIT	Out1On		2
+		NAMED_BIT	HtrOn		3
+		NAMED_BIT	IsDark		4
+		NAMED_BIT	Cndnstn		5
+		NAMED_BIT	Freeze		6
+		NAMED_BIT	Storm		7
+		
+
+' SLOWLY TRANSMITTED REGISTERS, IF THEY EXIST
+' The DUT may also transmit register values slowly, for registers that do not
+' change frequently.  If this feature is used, put keyword here 
+' SLOW_REG_INDEX and SLOW_REG_VALUE in the transmission order they correspond to.
+' The SLOW_REG_INDEX will cyle through 0,1, 2... up to the highset index of 
+' SLOW_REG_NAME transmitted.  The SLOW_REG_VALUE transmits the value.
+		SLOW_REG_INDEX			' 7
+		SLOW_REG_VALUE			' 8
+
+		SLOW_REG_NAME	RevLevel	11	11	' 0
+		SLOW_REG_NAME	EmLevel		30	80	' 1
+		SLOW_REG_NAME	RecEmStr	60	66	' 2
+		SLOW_REG_NAME	ABLevel		10	10	' 3
+		SLOW_REG_NAME	TmprtrF		70	100	' 4
+		SLOW_REG_NAME	PUGain		34	39	' 5
+		
+		
+		SLOW_REG_NAME	ClearTR		60	170	' 6
+		SLOW_REG_NAME	AmbLight			' 7
+		SLOW_REG_NAME	Bucket				' 8
+		SLOW_REG_NAME	Barrel				' 9
+		SLOW_REG_NAME	RGConfig			' 10
+		SLOW_REG_NAME	DwellT				' 11
+		SLOW_REG_NAME	SinceRn				' 12
+		SLOW_REG_NAME	MonoStb				' 13
+		SLOW_REG_NAME	LightAD		120	136	' 14
+		SLOW_REG_NAME	RainThr				' 15
+		
+
+' USB DATA ACQUISITION
+' Based on USB adapter by DLP Designs.  Model DLP-IO8-G
+' If one or more of these keywords is present, then the RDM will know USB data acquisition exits.
+' MON_DIG_CH  ChannelNumber
+' Reead the digial channal value each time it reads the serial buffer.  ' Values:
+' 0 = Port was not open /  15 = Was low at any time during frame / 241 = Was high entire time during frame
+		MON_DIG_CH	1
+
+END_RDM_SETUP
